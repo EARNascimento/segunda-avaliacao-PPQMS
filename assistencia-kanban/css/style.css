@@ -251,3 +251,36 @@ details summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
 .busca { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .busca input { flex: 1; min-width: 180px; }
 .vazio { color: var(--texto-suave); padding: 1rem 0; }
+
+/* ---------- Etapa 3: painel do técnico ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%);
+  max-width: min(560px, 92vw); padding: .75rem 1.1rem; border-radius: var(--raio);
+  background: var(--grafite); color: #fff; font-weight: 600; z-index: 60; box-shadow: 0 6px 20px rgba(0,0,0,.3);
+  border-left: 6px solid var(--ok);
+}
+.toast.erro { border-left-color: var(--urgente); }
+.toast.alerta { border-left-color: var(--solda); }
+
+.recebimentos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .75rem; }
+.recebimento { border: 1px solid var(--linha); border-radius: var(--raio); padding: .75rem; background: #fff; }
+.recebimento .linha { display: flex; gap: .5rem; margin: .5rem 0; flex-wrap: wrap; }
+.recebimento .linha > * { flex: 1; min-width: 120px; }
+.recebimento .btn { width: 100%; }
+
+.quadro-dica { font-size: .85rem; color: var(--texto-suave); margin-bottom: .75rem; }
+.coluna-corpo { min-height: 200px; }
+.cartao .topo-cartao { display: flex; justify-content: space-between; gap: .4rem; align-items: center; margin-bottom: .25rem; }
+.cartao .meta { color: var(--texto-suave); font-size: .8rem; }
+.cartao .tags { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .35rem; }
+.cartao.arrastando { opacity: .45; }
+.cartao-acoes { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.btn-mini {
+  font: inherit; font-size: .78rem; font-weight: 600; padding: .25rem .5rem; border-radius: 6px;
+  border: 1.5px solid var(--tapete); background: #fff; color: var(--tapete); cursor: pointer;
+}
+.btn-mini.principal { background: var(--tapete); color: #fff; }
+.btn-mini.alerta { border-color: var(--urgente); color: var(--urgente); }
+.espera { font-size: .78rem; color: var(--texto-suave); font-style: italic; margin-top: .4rem; }
+.modal h2 { margin-bottom: .75rem; }
+.modal .linha-tempo { max-height: 50vh; overflow: auto; }
