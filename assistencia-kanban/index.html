@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assistência Técnica — Acompanhamento de Consertos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">Bancada Digital <small>Etapa 1 — Fundação</small></div>
+  <nav id="navUsuario" hidden>
+    <span class="quem" id="quem"></span>
+    <button class="btn fantasma" id="btnSair" type="button">Sair</button>
+  </nav>
+</header>
+
+<main class="container">
+
+  <div id="avisoAcesso" class="aviso erro" hidden>
+    Acesso negado: seu perfil não tem permissão para abrir essa página.
+  </div>
+
+  <!-- ===== Tela de login (visível se NÃO houver usuário logado) ===== -->
+  <section id="telaLogin" class="login-wrap" hidden>
+    <div class="painel">
+      <h1>Entrar</h1>
+      <p>Login simulado: escolha um perfil para navegar pela plataforma.</p>
+      <form id="formLogin" novalidate>
+        <div class="campo">
+          <label for="nome">Seu nome</label>
+          <input id="nome" name="nome" type="text" value="Carlos" autocomplete="off" required>
+        </div>
+        <div class="campo">
+          <label id="lblPerfil">Perfil</label>
+          <div class="perfis" role="radiogroup" aria-labelledby="lblPerfil">
+            <input type="radio" name="perfil" id="pCliente" value="cliente" checked>
+            <label for="pCliente">Cliente</label>
+            <input type="radio" name="perfil" id="pTecnico" value="tecnico">
+            <label for="pTecnico">Técnico</label>
+            <input type="radio" name="perfil" id="pGestor" value="gestor">
+            <label for="pGestor">Gestor</label>
+          </div>
+        </div>
+        <p id="erroLogin" class="aviso erro" hidden>Informe seu nome para entrar.</p>
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== Área logada ===== -->
+  <section id="telaHub" hidden>
+    <div class="painel">
+      <h1 id="boasVindas"></h1>
+      <p>Atalhos do seu perfil (as páginas são criadas nas próximas etapas):</p>
+      <div class="links-perfil" id="linksPerfil"></div>
+    </div>
+
+    <div class="painel">
+      <h2>Resumo do quadro (dados de exemplo)</h2>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Coluna</th><th>OS</th><th>Limite WIP</th><th>Situação</th></tr></thead>
+          <tbody id="tabResumo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="painel">
+      <h2>Fila ordenada por classe de serviço</h2>
+      <p>Urgente → Data Fixa (prazo mais próximo) → Padrão (ordem de chegada). Considera todas as OS ativas.</p>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>#</th><th>OS</th><th>Classe</th><th>Coluna</th><th>Alerta</th></tr></thead>
+          <tbody id="tabFila"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grade-2">
+      <div class="painel">
+        <h2>Testes automáticos das regras</h2>
+        <p>Executa <code>podeMover()</code>, WIP, ordenação e risco em cima de dados controlados.</p>
+        <button class="btn" id="btnTestes" type="button">Rodar testes</button>
+        <p id="placar" style="margin-top:.75rem;font-weight:600"></p>
+        <ul class="resultado-teste" id="listaTestes"></ul>
+      </div>
+
+      <div class="painel">
+        <h2>Dados no localStorage</h2>
+        <p>
+          <button class="btn secundario" id="btnVerDados" type="button">Mostrar dados</button>
+          <button class="btn perigo" id="btnReset" type="button">Resetar dados de exemplo</button>
+        </p>
+        <pre class="json" id="jsonDados" hidden></pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/status.js"></script>
+<script src="js/app.js"></script>
+<script>
+(function () {
+  garantirDados();
+
+  const $ = id => document.getElementById(id);
+
+  if (sessionStorage.getItem('acesso_negado')) {
+    $('avisoAcesso').hidden = false;
+    sessionStorage.removeItem('acesso_negado');
+  }
+
+  /* ---------- Login ---------- */
+  $('formLogin').addEventListener('submit', e => {
+    e.preventDefault();
+    const nome = $('nome').value.trim();
+    if (!nome) { $('erroLogin').hidden = false; $('nome').focus(); return; }
+    const perfil = document.querySelector('input[name="perfil"]:checked').value;
+    Auth.entrar(nome, perfil);
+    render();
+  });
+
+  $('btnSair').addEventListener('click', () => { Auth.sair(); render(); });
+
+  /* ---------- Renderização ---------- */
+  const LINKS = {
+    cliente: [['cliente.html', 'Meus consertos (Etapa 2)']],
+    tecnico: [['tecnico.html', 'Quadro Kanban (Etapa 3)']],
+    gestor:  [['gestor.html', 'Painel do gestor (Etapa 5)']]
+  };
+  const NOME_PERFIL = { cliente: 'Cliente', tecnico: 'Técnico', gestor: 'Gestor' };
+
+  function render() {
+    const u = Auth.usuario();
+    $('telaLogin').hidden = !!u;
+    $('telaHub').hidden = !u;
+    $('navUsuario').hidden = !u;
+    if (!u) return;
+
+    $('quem').textContent = u.nome + ' · ' + NOME_PERFIL[u.perfil];
+    $('boasVindas').textContent = 'Olá, ' + u.nome;
+    $('linksPerfil').innerHTML = LINKS[u.perfil]
+      .map(([href, txt]) => `<a class="btn secundario" href="${href}">${txt}</a>`).join('');
+
+    renderResumo();
+    renderFila();
+  }
+
+  function renderResumo() {
+    const lista = OS.todas();
+    $('tabResumo').innerHTML = COLUNAS.map(c => {
+      const qtd = contarNaColuna(lista, c.id);
+      let situacao = '—', cls = '';
+      if (c.wip !== null) {
+        if (qtd > c.wip) { situacao = 'WIP excedido'; cls = 'risco'; }
+        else if (qtd === c.wip) { situacao = 'No limite (bloqueia novos)'; cls = 'risco'; }
+        else { situacao = 'Com vaga'; }
+      }
+      return `<tr>
+        <td>${c.id}. ${c.nome}</td>
+        <td class="mono">${qtd}</td>
+        <td class="mono">${c.wip === null ? 'sem limite' : c.wip}</td>
+        <td>${cls ? `<span class="tag ${cls}">${situacao}</span>` : situacao}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderFila() {
+    const ativas = OS.todas().filter(o => o.coluna !== 6);
+    const fila = ordenarFila(ativas);
+    $('tabFila').innerHTML = fila.map((o, i) => {
+      const risco = riscoDaOS(o);
+      return `<tr>
+        <td class="mono">${i + 1}</td>
+        <td class="mono">${Fmt.escapar(o.id)}</td>
+        <td><span class="tag ${o.classe}">${CLASSES[o.classe].icone} ${CLASSES[o.classe].rotulo}</span></td>
+        <td>${getColuna(o.coluna).nome}</td>
+        <td>${risco ? `<span class="tag risco">${risco}</span>` : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ---------- Dados / reset ---------- */
+  $('btnVerDados').addEventListener('click', () => {
+    const pre = $('jsonDados');
+    const dados = {};
+    Object.values(CHAVES).forEach(c => dados[c] = DB.ler(c, null));
+    pre.textContent = JSON.stringify(dados, null, 2);
+    pre.hidden = !pre.hidden;
+  });
+
+  $('btnReset').addEventListener('click', () => {
+    if (!confirm('Apagar tudo e recriar os dados de exemplo? (o login é mantido)')) return;
+    const u = Auth.usuario();
+    resetarTudo();
+    if (u) Auth.entrar(u.nome, u.perfil);
+    $('jsonDados').hidden = true;
+    render();
+  });
+
+  /* ---------- Testes automáticos ---------- */
+  function mk(id, classe, coluna, extra = {}) {
+    return Object.assign({
+      id, classe, coluna,
+      dataLimite: null,
+      entradaColunaEm: new Date().toISOString()
+    }, extra);
+  }
+
+  $('btnTestes').addEventListener('click', () => {
+    const resultados = [];
+    const t = (nome, cond) => resultados.push({ nome, ok: !!cond });
+
+    // Cenário controlado: Testes Finais cheio (3/3) e Diagnóstico com vaga
+    const lista = [
+      mk('A', 'padrao', 5), mk('B', 'padrao', 5), mk('C', 'padrao', 5),
+      mk('D', 'padrao', 4), mk('E', 'padrao', 2)
+    ];
+
+    t('Avanço 1 → 2 é permitido',               podeMover(mk('X', 'padrao', 1), 2, lista).ok);
+    t('Pular 2 → 6 é bloqueado',                !podeMover(mk('X', 'padrao', 2), 6, lista).ok);
+    t('Pular 1 → 3 é bloqueado',                !podeMover(mk('X', 'padrao', 1), 3, lista).ok);
+    t('Voltar 4 → 3 é bloqueado',               !podeMover(mk('X', 'padrao', 4), 3, lista).ok);
+    t('Voltar 2 → 1 é bloqueado',               !podeMover(mk('X', 'padrao', 2), 1, lista).ok);
+    t('Retorno de qualidade 5 → 4 é permitido', podeMover(mk('X', 'padrao', 5), 4, lista).ok);
+    t('3 → 4 sem aprovação é bloqueado',        !podeMover(mk('X', 'padrao', 3), 4, lista).ok);
+    t('3 → 4 com aprovação é permitido',        podeMover(mk('X', 'padrao', 3), 4, lista, { aprovacao: true }).ok);
+    t('3 → 6 sem recusa é bloqueado',           !podeMover(mk('X', 'padrao', 3), 6, lista).ok);
+    t('3 → 6 com recusa é permitido',           podeMover(mk('X', 'padrao', 3), 6, lista, { recusa: true }).ok);
+
+    t('WIP: Padrão NÃO entra em Testes Finais cheio (3/3)',
+      !podeMover(mk('X', 'padrao', 4), 5, lista).ok);
+    t('WIP: Data Fixa NÃO entra em Testes Finais cheio',
+      !podeMover(mk('X', 'dataFixa', 4), 5, lista).ok);
+    const urg = podeMover(mk('X', 'urgente', 4), 5, lista);
+    t('WIP: Urgente entra em Testes Finais cheio e marca excedeWip', urg.ok && urg.excedeWip);
+    t('WIP: Padrão entra em Diagnóstico com vaga (1/5)',
+      podeMover(mk('X', 'padrao', 1), 2, lista).ok);
+
+    const filaTeste = ordenarFila([
+      mk('P1', 'padrao', 2, { entradaColunaEm: '2025-01-01T10:00:00Z' }),
+      mk('F2', 'dataFixa', 2, { dataLimite: '2030-01-03T10:00:00Z' }),
+      mk('U1', 'urgente', 2),
+      mk('F1', 'dataFixa', 2, { dataLimite: '2030-01-02T10:00:00Z' }),
+      mk('P0', 'padrao', 2, { entradaColunaEm: '2024-12-01T10:00:00Z' })
+    ]).map(o => o.id).join(',');
+    t('Fila: Urgente → Data Fixa (prazo) → Padrão (FIFO)  [' + filaTeste + ']',
+      filaTeste === 'U1,F1,F2,P0,P1');
+
+    const agora = new Date();
+    t('Risco: Data Fixa com < 24h é sinalizada',
+      riscoDaOS(mk('X', 'dataFixa', 2, { dataLimite: new Date(agora.getTime() + 6 * 3600000).toISOString() }), agora));
+    t('Risco: Data Fixa com 5 dias de folga NÃO é sinalizada',
+      !riscoDaOS(mk('X', 'dataFixa', 2, { dataLimite: new Date(agora.getTime() + 5 * 86400000).toISOString() }), agora));
+    t('Risco: Padrão parada há 10 dias corridos é sinalizada',
+      riscoDaOS(mk('X', 'padrao', 2, { entradaColunaEm: new Date(agora.getTime() - 10 * 86400000).toISOString() }), agora));
+    t('Risco: Padrão recém-chegada NÃO é sinalizada',
+      !riscoDaOS(mk('X', 'padrao', 2), agora));
+
+    const passou = resultados.filter(r => r.ok).length;
+    $('placar').textContent = `${passou} de ${resultados.length} testes passaram`;
+    $('placar').style.color = passou === resultados.length ? 'var(--ok)' : 'var(--alerta)';
+    $('listaTestes').innerHTML = resultados
+      .map(r => `<li class="${r.ok ? 'passou' : 'falhou'}">${Fmt.escapar(r.nome)}</li>`).join('');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
