@@ -217,3 +217,37 @@ pre.json {
 .links-perfil { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- Etapa 2: cliente (agendamento e acompanhamento) ---------- */
+.horarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: .5rem; }
+.horarios input { position: absolute; opacity: 0; width: 0; }
+.horarios label {
+  margin: 0; text-align: center; padding: .5rem .25rem; border: 2px solid var(--linha);
+  border-radius: var(--raio); cursor: pointer; font-family: var(--fonte-mono); font-size: .9rem;
+}
+.horarios label small { display: block; font-family: var(--fonte); font-weight: 400; font-size: .72rem; color: var(--texto-suave); }
+.horarios input:checked + label { border-color: var(--tapete); background: var(--tapete-claro); }
+.horarios input:focus-visible + label { outline: 3px solid var(--solda); }
+.horarios input:disabled + label { background: #e8ecea; color: #8a9a95; cursor: not-allowed; text-decoration: line-through; border-style: dashed; }
+.horarios input:disabled + label small { text-decoration: none; }
+
+.msg-campo { color: var(--alerta); font-size: .85rem; margin-top: .25rem; min-height: 1.1em; }
+input.invalido, select.invalido, textarea.invalido { border-color: var(--alerta); }
+
+.os-card { border: 1px solid var(--linha); border-radius: var(--raio); padding: 1rem; margin-bottom: 1rem; background: #fff; }
+.os-card header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; align-items: baseline; margin-bottom: .5rem; }
+.os-card .os-id { font-family: var(--fonte-mono); font-weight: 700; font-size: 1.1rem; }
+
+.etapas { list-style: none; display: grid; grid-template-columns: repeat(6, 1fr); gap: .35rem; padding: 0; margin: .75rem 0; }
+.etapas li { font-size: .74rem; text-align: center; padding: .4rem .2rem; border-radius: 6px; background: #e8ecea; color: var(--texto-suave); border-bottom: 4px solid transparent; }
+.etapas li.feita { background: var(--tapete-claro); color: var(--grafite); }
+.etapas li.atual { background: var(--tapete); color: #fff; font-weight: 700; border-bottom-color: var(--solda); }
+@media (max-width: 640px) { .etapas { grid-template-columns: 1fr 1fr; } }
+
+.linha-tempo { list-style: none; margin: .5rem 0 0; padding: 0 0 0 1rem; border-left: 3px solid var(--tapete-claro); font-size: .85rem; }
+.linha-tempo li { margin-bottom: .4rem; }
+.linha-tempo .quando { font-family: var(--fonte-mono); color: var(--texto-suave); font-size: .78rem; }
+details summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.busca { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.busca input { flex: 1; min-width: 180px; }
+.vazio { color: var(--texto-suave); padding: 1rem 0; }
