@@ -11,7 +11,7 @@
 <body>
 
 <header class="topo">
-  <div class="marca">Bancada Digital <small>Etapa 4 — Orçamento</small></div>
+  <div class="marca">Bancada Digital <small>Etapa 5 — Gestor</small></div>
   <nav id="navUsuario" hidden>
     <span class="quem" id="quem"></span>
     <button class="btn fantasma" id="btnSair" type="button">Sair</button>
@@ -252,6 +252,21 @@
     t('Orçamento: enviado há 4 dias ainda vale', !Orc.expirado({ status: 'enviado', dataEnvio: h(4) }));
     t('Orçamento: enviado há 6 dias aparece como expirado', Orc.expirado({ status: 'enviado', dataEnvio: h(6) }));
     t('Orçamento: já aprovado nunca expira', !Orc.expirado({ status: 'aprovado', dataEnvio: h(30) }));
+
+    const dia = 86400000, base = Date.parse('2030-01-10T12:00:00Z');
+    const conc = (criadoHa, concluidoHa, extra = {}) => mk('M', 'padrao', 6, Object.assign({
+      criadaEm: new Date(base - criadoHa * dia).toISOString(),
+      entradaColunaEm: new Date(base - concluidoHa * dia).toISOString()
+    }, extra));
+    const m = mediaConserto([
+      conc(10, 8),                                        // 2 dias
+      conc(7, 3),                                         // 4 dias
+      conc(9, 3, { etiqueta: ETIQUETA_SEM_CONSERTO }),    // devolvida: não conta
+      mk('N', 'padrao', 4)                                // não concluída: não conta
+    ]);
+    t('Métrica: média considera só concluídas com conserto (2 e 4 dias → 3,0 dias, n = 2)',
+      m.n === 2 && Math.abs(m.ms - 3 * dia) < 1000 && formatarDuracao(m.ms) === '3,0 dias');
+    t('Métrica: sem OS concluídas a média é "—"', mediaConserto([mk('N', 'padrao', 2)]).ms === null);
 
     t('WIP: Padrão NÃO entra em Testes Finais cheio (3/3)',
       !podeMover(mk('X', 'padrao', 4), 5, lista).ok);

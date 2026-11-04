@@ -95,7 +95,7 @@ function criarOSSeed(num, cliente, marca, modelo, defeito, classe, coluna, diasN
     cliente, marca, modelo, defeito, classe, coluna,
     dataLimite: extra.dataLimite || null,
     etiqueta: extra.etiqueta || null,
-    tecnico: coluna >= 2 ? 'Marina' : null,
+    tecnico: coluna >= 2 ? (num % 2 === 0 ? 'Rafael' : 'Marina') : null,
     criadaEm: diasAtras(diasNaColuna + 2),
     entradaColunaEm: entrada,
     historico: [
@@ -192,21 +192,36 @@ const Orc = {
     this.salvarTodos(orcs);
     OS.salvarTodas(lista);
   },
-  /** Dados de exemplo: toda OS em Aguardando Aprovação precisa ter um orçamento. */
+  /** Orçamento aprovado mais recente da OS (valor que o cliente paga). */
+  aprovado(osId) {
+    const l = this.daOS(osId).filter(o => o.status === 'aprovado');
+    return l.length ? l[l.length - 1] : null;
+  },
+  /** Dados de exemplo: toda OS que já passou do diagnóstico precisa ter orçamento. */
   semearSeFaltar() {
     const lista = OS.todas();
     const orcs = this.todos();
     let mudou = false;
-    lista.filter(o => o.coluna === 3 && !orcs.some(q => q.osId === o.id)).forEach(os => {
+    lista.filter(o => o.coluna >= 3 && !orcs.some(q => q.osId === o.id)).forEach(os => {
+      const pendente = os.coluna === 3;
+      const recusada = os.etiqueta === ETIQUETA_SEM_CONSERTO;
+      const status = pendente ? 'enviado' : (recusada ? 'recusado' : 'aprovado');
       const itens = [
-        { descricao: 'Módulo da câmera', quantidade: 1, valorUnit: 480 },
+        { descricao: pendente ? 'Módulo da câmera' : 'Peça de reposição', quantidade: 1, valorUnit: 480 },
         { descricao: 'Mão de obra', quantidade: 1, valorUnit: 120 }
       ];
-      os.diagnostico = os.diagnostico || 'Módulo da câmera com umidade interna.';
+      os.diagnostico = os.diagnostico || (pendente
+        ? 'Módulo da câmera com umidade interna.'
+        : `Defeito "${os.defeito}" confirmado em bancada.`);
+      const envio = diasAtras(pendente ? 1 : 3);
+      const d = new Date(diasAtras(2));
       orcs.push({
         id: 'ORC-' + (1001 + orcs.length), osId: os.id, versao: 1,
         diagnostico: os.diagnostico, itens, valorTotal: this.calcularTotal(itens), prazo: 3,
-        dataEnvio: diasAtras(1), status: 'enviado', decisao: null
+        dataEnvio: envio, status,
+        decisao: pendente ? null : {
+          data: d.toLocaleDateString('pt-BR'), hora: '10:00', usuario: os.cliente, iso: d.toISOString()
+        }
       });
       mudou = true;
     });

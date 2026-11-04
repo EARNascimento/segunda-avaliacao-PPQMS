@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel do gestor — Bancada Digital</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">Bancada Digital <small>Painel do gestor</small></div>
+  <nav>
+    <span class="quem" id="quem"></span>
+    <a class="btn fantasma" href="index.html">Início</a>
+    <button class="btn fantasma" id="btnSair" type="button">Sair</button>
+  </nav>
+</header>
+
+<main class="container">
+
+  <!-- ===== Métricas ===== -->
+  <section aria-labelledby="tMetricas">
+    <h2 id="tMetricas">Visão geral</h2>
+    <div class="metricas" id="metricas"></div>
+  </section>
+
+  <!-- ===== Alertas ===== -->
+  <section class="painel" aria-labelledby="tAlertas">
+    <h2 id="tAlertas">Alertas</h2>
+    <ul class="alertas-lista" id="alertas"></ul>
+  </section>
+
+  <!-- ===== Fila por coluna ===== -->
+  <section aria-labelledby="tFila">
+    <h2 id="tFila">Fila por coluna</h2>
+    <p class="quadro-dica">Somente leitura. Em cada coluna: 🔴 Urgente → 🟡 Data Fixa → 🔵 Padrão. Colunas no limite ou acima do WIP e OS com prazo em risco aparecem destacadas em vermelho.</p>
+    <div class="kanban leitura" id="fila"></div>
+  </section>
+
+  <!-- ===== Histórico de serviços ===== -->
+  <section class="painel" style="margin-top:1.25rem" aria-labelledby="tHist">
+    <h2 id="tHist">Histórico de serviços</h2>
+    <form class="filtros" id="filtros" novalidate>
+      <div class="campo"><label for="fDe">Entrada de</label><input id="fDe" type="date"></div>
+      <div class="campo"><label for="fAte">Entrada até</label><input id="fAte" type="date"></div>
+      <div class="campo"><label for="fTec">Técnico</label><select id="fTec"></select></div>
+      <div class="campo"><label for="fStatus">Status</label><select id="fStatus"></select></div>
+      <div class="campo"><button class="btn secundario" id="btnLimparFiltros" type="button">Limpar filtros</button></div>
+    </form>
+    <div class="aviso erro" id="erroFiltro" hidden>A data inicial não pode ser depois da data final.</div>
+    <div class="contagem" id="contagem" aria-live="polite"></div>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr><th>OS</th><th>Cliente</th><th>Aparelho</th><th>Classe</th><th>Técnico</th><th>Status</th><th>Entrada</th><th>Tempo de conserto</th><th></th></tr>
+        </thead>
+        <tbody id="tabHist"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== Modal de histórico da OS ===== -->
+<div class="modal-fundo" id="modalFundo" aria-hidden="true">
+  <div class="modal modal-largo" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <h2 id="modalTitulo"></h2>
+    <div id="modalCorpo"></div>
+    <div class="acoes"><button class="btn secundario" id="modalFechar" type="button">Fechar</button></div>
+  </div>
+</div>
+
+<script src="js/status.js"></script>
+<script src="js/app.js"></script>
+<script src="js/gestor.js"></script>
+</body>
+</html>

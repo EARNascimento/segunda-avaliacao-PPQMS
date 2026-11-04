@@ -144,3 +144,39 @@ function ordenarFila(lista) {
     return new Date(a.entradaColunaEm) - new Date(b.entradaColunaEm);
   });
 }
+
+/* ---------- Métricas do gestor (História 4) ---------- */
+
+/**
+ * Tempo de conserto = da entrada em "Recebido / Triagem" (criadaEm)
+ * até a entrada em "Pronto / Finalizado" (entradaColunaEm da OS concluída).
+ * OS devolvidas sem conserto NÃO entram: não houve conserto.
+ * Retorna milissegundos, ou null se a OS não conta.
+ */
+function tempoDeConsertoMs(os) {
+  if (os.coluna !== 6 || os.etiqueta === ETIQUETA_SEM_CONSERTO) return null;
+  const ms = new Date(os.entradaColunaEm) - new Date(os.criadaEm);
+  return ms >= 0 ? ms : null;
+}
+
+/** { n: quantidade de OS consideradas, ms: média em milissegundos (null se n = 0) } */
+function mediaConserto(lista) {
+  const tempos = lista.map(tempoDeConsertoMs).filter(t => t !== null);
+  if (!tempos.length) return { n: 0, ms: null };
+  return { n: tempos.length, ms: tempos.reduce((a, b) => a + b, 0) / tempos.length };
+}
+
+function formatarDuracao(ms) {
+  if (ms === null || ms === undefined) return '—';
+  const dias = ms / 86400000;
+  if (dias >= 1) return dias.toFixed(1).replace('.', ',') + (dias.toFixed(1) === '1.0' ? ' dia' : ' dias');
+  const horas = ms / 3600000;
+  return horas.toFixed(1).replace('.', ',') + ' h';
+}
+
+/* ---------- Pagamento (fechamento da História 1) ---------- */
+
+/** OS pronta, com conserto feito e ainda não paga. */
+function aguardandoPagamento(os) {
+  return os.coluna === 6 && os.etiqueta !== ETIQUETA_SEM_CONSERTO && !os.pagamento;
+}

@@ -303,3 +303,17 @@ details summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
 .tag.aprovado { background: #dff2e6; color: var(--ok); }
 .tag.recusado, .tag.expirado { background: #e3e7e5; color: var(--grafite-2); }
 .cartao .orc-resumo { margin-top: .4rem; font-size: .8rem; }
+
+/* ---------- Etapa 5: painel do gestor ---------- */
+.metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+.metrica { background: #fff; border: 1px solid var(--linha); border-left: 6px solid var(--tapete); border-radius: var(--raio); padding: .8rem 1rem; }
+.metrica.alerta { border-left-color: var(--alerta); background: #fdf0ee; }
+.metrica .valor { font-size: 1.9rem; font-weight: 700; line-height: 1.1; font-family: var(--fonte-mono); }
+.metrica .nome { font-weight: 600; font-size: .9rem; }
+.metrica .detalhe { font-size: .78rem; color: var(--texto-suave); margin-top: .25rem; }
+.kanban.leitura .cartao { cursor: default; }
+.alertas-lista { list-style: none; margin: 0; padding: 0; }
+.alertas-lista li { padding: .5rem .6rem; border-bottom: 1px solid var(--linha); display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; align-items: end; margin-bottom: 1rem; }
+.filtros .campo { margin: 0; }
+.contagem { font-size: .85rem; color: var(--texto-suave); margin-bottom: .5rem; }
