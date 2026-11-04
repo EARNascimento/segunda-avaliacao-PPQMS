@@ -50,6 +50,35 @@
   </div>
 </div>
 
+<!-- ===== Modal de orçamento ===== -->
+<div class="modal-fundo" id="modalOrcFundo" aria-hidden="true">
+  <div class="modal modal-largo" role="dialog" aria-modal="true" aria-labelledby="orcTitulo">
+    <h2 id="orcTitulo">Enviar orçamento</h2>
+    <form id="formOrc" novalidate>
+      <div id="orcNota" class="aviso" hidden></div>
+      <div class="campo">
+        <label for="orcDiag">Diagnóstico</label>
+        <textarea id="orcDiag" rows="3" placeholder="O que foi encontrado no aparelho"></textarea>
+        <div class="msg-campo" id="erro-orcDiag"></div>
+      </div>
+      <label>Peças e serviços</label>
+      <div id="orcItens"></div>
+      <button type="button" class="btn secundario" id="orcAddItem" style="padding:.3rem .8rem">+ Adicionar item</button>
+      <div class="msg-campo" id="erro-orcItens"></div>
+      <div class="campo" style="max-width:240px;margin-top:.75rem">
+        <label for="orcPrazo">Prazo do conserto (dias úteis)</label>
+        <input id="orcPrazo" type="number" min="1" step="1" value="3">
+        <div class="msg-campo" id="erro-orcPrazo"></div>
+      </div>
+      <p>Total: <strong class="total-orc" id="orcTotal">R$ 0,00</strong> · válido por 5 dias após o envio</p>
+      <div class="acoes">
+        <button class="btn secundario" id="orcCancelar" type="button">Cancelar</button>
+        <button class="btn" type="submit">Enviar orçamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="js/status.js"></script>

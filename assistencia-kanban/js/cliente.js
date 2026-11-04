@@ -192,10 +192,144 @@
         <div>Defeito: ${Fmt.escapar(o.defeito)}</div>
         <div style="margin-top:.25rem">Etapa atual: <strong>${getColuna(o.coluna).nome}</strong></div>
         <ol class="etapas" aria-label="Etapas do conserto">${etapas}</ol>
-        <details><summary>Histórico (${o.historico.length})</summary><ul class="linha-tempo">${hist}</ul></details>
+        ${htmlOrcamento(o)}
+        <details style="margin-top:.75rem"><summary>Histórico (${o.historico.length})</summary><ul class="linha-tempo">${hist}</ul></details>
       </article>`;
     }).join('');
   }
+
+
+  /* ---------- Orçamento ---------- */
+  const ROTULO_ORC = {
+    enviado: 'Aguardando sua decisão', aprovado: 'Aprovado', recusado: 'Recusado', expirado: 'Expirado'
+  };
+
+  function htmlOrcamento(os) {
+    const orc = Orc.atual(os.id);
+    if (!orc) return '';
+    const linhas = orc.itens.map(i => `<tr>
+      <td>${Fmt.escapar(i.descricao)}</td>
+      <td class="num">${i.quantidade}</td>
+      <td class="num">${Fmt.dinheiro(i.valorUnit)}</td>
+      <td class="num">${Fmt.dinheiro(i.quantidade * i.valorUnit)}</td></tr>`).join('');
+
+    const pendente = orc.status === 'enviado' && os.coluna === 3;
+    let rodape = '';
+    if (orc.status === 'enviado') rodape = `Válido até <strong>${Fmt.dataHora(Orc.venceEm(orc))}</strong>.`;
+    if (orc.status === 'expirado') rodape = 'Este orçamento passou de 5 dias e não pode mais ser aprovado. Aguarde o técnico enviar um novo.';
+    if ((orc.status === 'aprovado' || orc.status === 'recusado') && orc.decisao)
+      rodape = `${orc.status === 'aprovado' ? 'Aprovado' : 'Recusado'} por ${Fmt.escapar(orc.decisao.usuario)} em ${orc.decisao.data} às ${orc.decisao.hora}.`;
+
+    return `<div class="orcamento ${orc.status}">
+      <h3>Orçamento v${orc.versao} <span class="tag ${orc.status}">${ROTULO_ORC[orc.status] || orc.status}</span></h3>
+      <div>Diagnóstico: ${Fmt.escapar(orc.diagnostico)}</div>
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>Peça / serviço</th><th class="num">Qtd</th><th class="num">Unitário</th><th class="num">Subtotal</th></tr></thead>
+        <tbody>${linhas}</tbody>
+        <tfoot><tr><th colspan="3">Total</th><th class="num">${Fmt.dinheiro(orc.valorTotal)}</th></tr></tfoot>
+      </table></div>
+      <div>Prazo do conserto: <strong>${orc.prazo} dia(s) útil(eis)</strong></div>
+      <div style="margin-top:.25rem">${rodape}</div>
+      ${pendente ? `<div class="acoes-orc">
+        <button class="btn" type="button" data-orc="aprovar" data-os="${os.id}">Aprovar orçamento</button>
+        <button class="btn perigo" type="button" data-orc="recusar" data-os="${os.id}">Recusar</button>
+      </div>` : ''}
+    </div>`;
+  }
+
+  let timerToast = null;
+  function toast(msg, tipo = 'ok') {
+    const el = $('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + (tipo === 'ok' ? '' : tipo);
+    el.hidden = false;
+    clearTimeout(timerToast);
+    timerToast = setTimeout(() => { el.hidden = true; }, 6000);
+  }
+
+  let decisaoPendente = null;   // { osId, tipo }
+  function abrirConfirmacao(osId, tipo) {
+    const os = OS.buscar(osId);
+    const orc = Orc.atual(osId);
+    if (!os || !orc) return;
+    decisaoPendente = { osId, tipo };
+    const aprovar = tipo === 'aprovar';
+    $('modalTitulo').textContent = aprovar ? 'Aprovar este orçamento?' : 'Recusar este orçamento?';
+    $('modalTexto').textContent = aprovar
+      ? `Você autoriza o conserto de ${os.marca} ${os.modelo} por ${Fmt.dinheiro(orc.valorTotal)}. O aparelho segue para Em Conserto.`
+      : `O aparelho ${os.marca} ${os.modelo} será devolvido sem conserto. Essa decisão não pode ser desfeita.`;
+    $('modalConfirmar').textContent = aprovar ? 'Sim, aprovar' : 'Sim, recusar';
+    $('modalConfirmar').className = 'btn' + (aprovar ? '' : ' perigo');
+    $('modalFundo').classList.add('aberto');
+    $('modalFundo').setAttribute('aria-hidden', 'false');
+    $('modalCancelar').focus();
+  }
+  function fecharConfirmacao() {
+    decisaoPendente = null;
+    $('modalFundo').classList.remove('aberto');
+    $('modalFundo').setAttribute('aria-hidden', 'true');
+  }
+
+  function decidir() {
+    if (!decisaoPendente) return;
+    const { osId, tipo } = decisaoPendente;
+    fecharConfirmacao();
+
+    Orc.atualizarExpiracoes();   // revalida a validade no momento da decisão
+    const lista = OS.todas();
+    const os = lista.find(o => o.id === osId);
+    const orcs = Orc.todos();
+    const doOS = orcs.filter(o => o.osId === osId);
+    const orc = doOS[doOS.length - 1];
+
+    if (!os || os.cliente !== usuario.nome) return;           // só mexe nas próprias OS
+    if (!orc || orc.status !== 'enviado' || os.coluna !== 3) {
+      toast('Este orçamento não está mais disponível (expirou ou foi substituído).', 'erro');
+      renderOS();
+      return;
+    }
+
+    const aprovar = tipo === 'aprovar';
+    const destino = aprovar ? 4 : 6;
+    const r = podeMover(os, destino, lista, aprovar ? { aprovacao: true } : { recusa: true });
+    if (!r.ok) {
+      toast('Não foi possível aprovar agora. ' + r.motivo + ' Tente novamente mais tarde.', 'erro');
+      return;
+    }
+
+    const agora = new Date();
+    orc.status = aprovar ? 'aprovado' : 'recusado';
+    orc.decisao = {
+      data: agora.toLocaleDateString('pt-BR'),
+      hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      usuario: usuario.nome,
+      iso: agora.toISOString()
+    };
+
+    const origem = os.coluna;
+    os.coluna = destino;
+    os.entradaColunaEm = agora.toISOString();
+    if (!aprovar) os.etiqueta = ETIQUETA_SEM_CONSERTO;
+
+    OS.registrarHistorico(os, `Orçamento ${orc.id} ${aprovar ? 'aprovado' : 'recusado'} pelo cliente (${Fmt.dinheiro(orc.valorTotal)})`, usuario.nome);
+    OS.registrarHistorico(os,
+      `Movida de "${getColuna(origem).nome}" para "${getColuna(destino).nome}"` + (aprovar ? '' : ` · ${ETIQUETA_SEM_CONSERTO}`),
+      usuario.nome);
+
+    Orc.salvarTodos(orcs);
+    OS.salvarTodas(lista);
+    toast(aprovar ? `Orçamento aprovado. ${os.id} segue para Em Conserto.` : `Orçamento recusado. ${os.id} será devolvido sem conserto.`);
+    renderOS();
+  }
+
+  $('listaOS').addEventListener('click', e => {
+    const tipo = e.target.getAttribute('data-orc');
+    if (tipo) abrirConfirmacao(e.target.getAttribute('data-os'), tipo);
+  });
+  $('modalCancelar').addEventListener('click', fecharConfirmacao);
+  $('modalConfirmar').addEventListener('click', decidir);
+  $('modalFundo').addEventListener('click', e => { if (e.target === $('modalFundo')) fecharConfirmacao(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharConfirmacao(); });
 
   $('formBusca').addEventListener('submit', e => { e.preventDefault(); renderOS(); });
   $('btnLimpar').addEventListener('click', () => { $('codigo').value = ''; renderOS(); });

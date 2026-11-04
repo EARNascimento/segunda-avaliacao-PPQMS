@@ -134,6 +134,8 @@ function gerarDadosExemplo() {
 
 function garantirDados() {
   if (!localStorage.getItem(CHAVES.ordens)) gerarDadosExemplo();
+  Orc.semearSeFaltar();
+  Orc.atualizarExpiracoes();   // checa a validade dos orçamentos ao abrir qualquer página
 }
 
 function resetarTudo() {
@@ -154,5 +156,60 @@ const Fmt = {
     const d = document.createElement('div');
     d.textContent = txt == null ? '' : String(txt);
     return d.innerHTML;
+  }
+};
+
+/* ---------- Orçamentos (História 3) ---------- */
+const Orc = {
+  todos() { return DB.ler(CHAVES.orcamentos, []); },
+  salvarTodos(lista) { DB.gravar(CHAVES.orcamentos, lista); },
+  daOS(osId) { return this.todos().filter(o => o.osId === osId).sort((a, b) => a.versao - b.versao); },
+  atual(osId) { const l = this.daOS(osId); return l.length ? l[l.length - 1] : null; },
+  proximoId() { return 'ORC-' + (1001 + this.todos().length); },
+
+  calcularTotal(itens) {
+    const total = itens.reduce((soma, i) => soma + Number(i.quantidade) * Number(i.valorUnit), 0);
+    return Math.round(total * 100) / 100;
+  },
+  venceEm(orc) {
+    return new Date(new Date(orc.dataEnvio).getTime() + VALIDADE_ORCAMENTO_DIAS * 86400000);
+  },
+  /** Só orçamentos ainda pendentes ("enviado") podem expirar. */
+  expirado(orc, agora = new Date()) {
+    return orc.status === 'enviado' && agora > this.venceEm(orc);
+  },
+  /** Marca como "expirado" os orçamentos vencidos e registra no histórico da OS. */
+  atualizarExpiracoes() {
+    const orcs = this.todos();
+    const vencidos = orcs.filter(o => this.expirado(o));
+    if (!vencidos.length) return;
+    const lista = OS.todas();
+    vencidos.forEach(o => {
+      o.status = 'expirado';
+      const os = lista.find(x => x.id === o.osId);
+      if (os) OS.registrarHistorico(os, `Orçamento ${o.id} expirou (${VALIDADE_ORCAMENTO_DIAS} dias sem resposta do cliente)`, 'Sistema');
+    });
+    this.salvarTodos(orcs);
+    OS.salvarTodas(lista);
+  },
+  /** Dados de exemplo: toda OS em Aguardando Aprovação precisa ter um orçamento. */
+  semearSeFaltar() {
+    const lista = OS.todas();
+    const orcs = this.todos();
+    let mudou = false;
+    lista.filter(o => o.coluna === 3 && !orcs.some(q => q.osId === o.id)).forEach(os => {
+      const itens = [
+        { descricao: 'Módulo da câmera', quantidade: 1, valorUnit: 480 },
+        { descricao: 'Mão de obra', quantidade: 1, valorUnit: 120 }
+      ];
+      os.diagnostico = os.diagnostico || 'Módulo da câmera com umidade interna.';
+      orcs.push({
+        id: 'ORC-' + (1001 + orcs.length), osId: os.id, versao: 1,
+        diagnostico: os.diagnostico, itens, valorTotal: this.calcularTotal(itens), prazo: 3,
+        dataEnvio: diasAtras(1), status: 'enviado', decisao: null
+      });
+      mudou = true;
+    });
+    if (mudou) { this.salvarTodos(orcs); OS.salvarTodas(lista); }
   }
 };

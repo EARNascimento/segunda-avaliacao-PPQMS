@@ -11,7 +11,7 @@
 <body>
 
 <header class="topo">
-  <div class="marca">Bancada Digital <small>Etapa 3 — Técnico</small></div>
+  <div class="marca">Bancada Digital <small>Etapa 4 — Orçamento</small></div>
   <nav id="navUsuario" hidden>
     <span class="quem" id="quem"></span>
     <button class="btn fantasma" id="btnSair" type="button">Sair</button>
@@ -93,6 +93,7 @@
         <h2>Dados no localStorage</h2>
         <p>
           <button class="btn secundario" id="btnVerDados" type="button">Mostrar dados</button>
+          <button class="btn secundario" id="btnEnvelhecer" type="button">Envelhecer orçamentos pendentes (+6 dias)</button>
           <button class="btn perigo" id="btnReset" type="button">Resetar dados de exemplo</button>
         </p>
         <pre class="json" id="jsonDados" hidden></pre>
@@ -194,6 +195,16 @@
     pre.hidden = !pre.hidden;
   });
 
+  $('btnEnvelhecer').addEventListener('click', () => {
+    const orcs = Orc.todos();
+    const pend = orcs.filter(o => o.status === 'enviado');
+    pend.forEach(o => { o.dataEnvio = new Date(new Date(o.dataEnvio).getTime() - 6 * 86400000).toISOString(); });
+    Orc.salvarTodos(orcs);
+    Orc.atualizarExpiracoes();
+    alert(pend.length + ' orçamento(s) pendente(s) agora estão expirados. Abra a área do cliente ou do técnico para ver.');
+    render();
+  });
+
   $('btnReset').addEventListener('click', () => {
     if (!confirm('Apagar tudo e recriar os dados de exemplo? (o login é mantido)')) return;
     const u = Auth.usuario();
@@ -232,6 +243,15 @@
     t('3 → 4 com aprovação é permitido',        podeMover(mk('X', 'padrao', 3), 4, lista, { aprovacao: true }).ok);
     t('3 → 6 sem recusa é bloqueado',           !podeMover(mk('X', 'padrao', 3), 6, lista).ok);
     t('3 → 6 com recusa é permitido',           podeMover(mk('X', 'padrao', 3), 6, lista, { recusa: true }).ok);
+
+    t('Orçamento: 2 → 3 sem orçamento enviado é bloqueado', !podeMover(mk('X', 'padrao', 2), 3, lista).ok);
+    t('Orçamento: 2 → 3 com orçamento enviado é permitido', podeMover(mk('X', 'padrao', 2), 3, lista, { orcamento: true }).ok);
+    t('Orçamento: total = soma de qtd × valor (2×50,50 + 1×120 = 221)',
+      Orc.calcularTotal([{ quantidade: 2, valorUnit: 50.5 }, { quantidade: 1, valorUnit: 120 }]) === 221);
+    const h = n => new Date(Date.now() - n * 86400000).toISOString();
+    t('Orçamento: enviado há 4 dias ainda vale', !Orc.expirado({ status: 'enviado', dataEnvio: h(4) }));
+    t('Orçamento: enviado há 6 dias aparece como expirado', Orc.expirado({ status: 'enviado', dataEnvio: h(6) }));
+    t('Orçamento: já aprovado nunca expira', !Orc.expirado({ status: 'aprovado', dataEnvio: h(30) }));
 
     t('WIP: Padrão NÃO entra em Testes Finais cheio (3/3)',
       !podeMover(mk('X', 'padrao', 4), 5, lista).ok);

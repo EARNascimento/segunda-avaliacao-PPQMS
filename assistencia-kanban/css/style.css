@@ -285,3 +285,21 @@ details summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
 .modal h2 { margin-bottom: .75rem; }
 .modal .linha-tempo { max-height: 50vh; overflow: auto; }
 .cartao .tags .tag { white-space: normal; }
+
+/* ---------- Etapa 4: orçamento ---------- */
+.modal-largo { max-width: 700px; max-height: 92vh; overflow: auto; }
+.item-orc { display: grid; grid-template-columns: 2fr 80px 120px 40px; gap: .4rem; margin-bottom: .4rem; align-items: start; }
+.item-orc .rotulos { font-size: .75rem; color: var(--texto-suave); }
+@media (max-width: 560px) { .item-orc { grid-template-columns: 1fr 1fr; } .item-orc input:first-child { grid-column: 1 / -1; } }
+.total-orc { font-size: 1.15rem; font-family: var(--fonte-mono); }
+
+.orcamento { border: 2px solid var(--tapete-claro); border-radius: var(--raio); padding: .9rem; margin-top: .9rem; background: #f7faf8; }
+.orcamento.enviado { border-color: var(--solda); background: #fffbef; }
+.orcamento.expirado, .orcamento.recusado { border-color: #b9c2be; background: #f1f3f2; }
+.orcamento table { margin: .5rem 0; background: #fff; }
+.orcamento td.num, .orcamento th.num { text-align: right; font-family: var(--fonte-mono); }
+.orcamento .acoes-orc { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+.tag.enviado { background: var(--datafixa-bg); color: var(--datafixa); }
+.tag.aprovado { background: #dff2e6; color: var(--ok); }
+.tag.recusado, .tag.expirado { background: #e3e7e5; color: var(--grafite-2); }
+.cartao .orc-resumo { margin-top: .4rem; font-size: .8rem; }

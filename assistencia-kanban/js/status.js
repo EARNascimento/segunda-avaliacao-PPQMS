@@ -20,6 +20,7 @@ const CLASSES = {
 };
 
 const ETIQUETA_SEM_CONSERTO = 'Devolver sem conserto';
+const VALIDADE_ORCAMENTO_DIAS = 5;
 
 function getColuna(id) {
   return COLUNAS.find(c => c.id === id);
@@ -56,6 +57,9 @@ function podeMover(os, destino, lista, opts = {}) {
   }
   if (atual === 3 && destino === 6 && !opts.recusa) {
     return { ok: false, motivo: 'Só a recusa do orçamento leva a OS direto para Pronto.', excedeWip: false };
+  }
+  if (atual === 2 && destino === 3 && !opts.orcamento) {
+    return { ok: false, motivo: 'Para mover a OS para Aguardando Aprovação, registre o diagnóstico e envie o orçamento.', excedeWip: false };
   }
   if (!(avancoNormal || aprovacao || recusa || retorno)) {
     let motivo = `Movimento não permitido: a OS só avança para a coluna seguinte.`;
