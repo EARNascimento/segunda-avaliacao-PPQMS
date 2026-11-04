@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quadro do técnico — Bancada Digital</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">Bancada Digital <small>Painel do técnico</small></div>
+  <nav>
+    <span class="quem" id="quem"></span>
+    <a class="btn fantasma" href="index.html">Início</a>
+    <button class="btn fantasma" id="btnSair" type="button">Sair</button>
+  </nav>
+</header>
+
+<main class="container">
+
+  <div id="avisoWip" class="aviso erro" role="alert" hidden></div>
+
+  <!-- ===== Recebimento de aparelhos agendados ===== -->
+  <section class="painel" aria-labelledby="tRec">
+    <h2 id="tRec">Aparelhos agendados aguardando chegada</h2>
+    <p class="quadro-dica">Ao confirmar o recebimento, a OS é criada em <strong>Recebido / Triagem</strong>.</p>
+    <div class="recebimentos" id="recebimentos"></div>
+  </section>
+
+  <!-- ===== Quadro Kanban ===== -->
+  <section aria-labelledby="tQuadro">
+    <h2 id="tQuadro">Quadro de consertos</h2>
+    <p class="quadro-dica">
+      Arraste um cartão para a próxima coluna ou use os botões do cartão (no celular, use os botões).
+      Em cada coluna a fila segue: 🔴 Urgente → 🟡 Data Fixa → 🔵 Padrão.
+    </p>
+    <div class="kanban" id="quadro"></div>
+  </section>
+
+</main>
+
+<!-- ===== Modal de histórico ===== -->
+<div class="modal-fundo" id="modalFundo" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <h2 id="modalTitulo"></h2>
+    <div id="modalCorpo"></div>
+    <div class="acoes"><button class="btn secundario" id="modalFechar" type="button">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/status.js"></script>
+<script src="js/app.js"></script>
+<script src="js/tecnico.js"></script>
+</body>
+</html>

@@ -142,7 +142,7 @@ input, select, textarea {
 /* ---------- Kanban (usado a partir da Etapa 3) ---------- */
 .kanban {
   display: grid;
-  grid-template-columns: repeat(6, minmax(210px, 1fr));
+  grid-template-columns: repeat(6, minmax(176px, 1fr));
   gap: .75rem;
   overflow-x: auto;
   padding-bottom: .5rem;
@@ -284,3 +284,4 @@ details summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
 .espera { font-size: .78rem; color: var(--texto-suave); font-style: italic; margin-top: .4rem; }
 .modal h2 { margin-bottom: .75rem; }
 .modal .linha-tempo { max-height: 50vh; overflow: auto; }
+.cartao .tags .tag { white-space: normal; }
